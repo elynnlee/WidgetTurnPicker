@@ -1,36 +1,9 @@
-Below are the steps to get your widget running. You can also find instructions at:
+This is a FigJam Widget that helps your group take turns! You can use this widget to keep track of whose turn it is, who's already gone, and who's left.
 
-https://www.figma.com/widget-docs/setup-guide/
+Allow people to “popcorn” to others and choose who goes next, or use the “next” button to randomly choose the next person. As people join or leave, you can also “refresh” the list of people to reflect who’s still in the file.
 
-This widget template uses Typescript and NPM, two standard tools in creating JavaScript applications.
+![whoseturn_hero](https://user-images.githubusercontent.com/2634759/142941624-97b77954-d12b-4636-af0f-ce01c2ea2033.png)
 
-First, download Node.js which comes with NPM. This will allow you to install TypeScript and other
-libraries. You can find the download link here:
+General instructions for running widgets can be found at https://www.figma.com/widget-docs/setup-guide/.
 
-https://nodejs.org/en/download/
-
-Next, install TypeScript and the latest type definitions by running:
-
-npm install
-
-If you are familiar with JavaScript, TypeScript will look very familiar. In fact, valid JavaScript code
-is already valid Typescript code.
-
-TypeScript adds type annotations to variables. This allows code editors such as Visual Studio Code
-to provide information about the Figma API while you are writing code, as well as help catch bugs
-you previously didn't notice.
-
-For more information, visit https://www.typescriptlang.org/
-
-Using TypeScript requires a compiler to convert TypeScript (code.ts) into JavaScript (code.js)
-for the browser to run.
-
-We recommend writing TypeScript code using Visual Studio code:
-
-1. Download Visual Studio Code if you haven't already: https://code.visualstudio.com/.
-2. Open this directory in Visual Studio Code.
-3. Compile TypeScript to JavaScript: Run the "Terminal > Run Build Task..." menu item,
-   then select "tsc: watch - tsconfig.json". You will have to do this again every time
-   you reopen Visual Studio Code.
-
-That's it! Visual Studio Code will regenerate the JavaScript file every time you save.
+To run this widget locally, you will need to install Typescript and other libraries using npm install.
