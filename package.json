@@ -4,7 +4,8 @@
   "description": "Your Figma widget",
   "main": "code.js",
   "scripts": {
-    "build": "tsc -p tsconfig.json"
+    "build": "tsc -p tsconfig.json",
+    "build:watch": "tsc -p tsconfig.json --watch"
   },
   "author": "",
   "license": "",

@@ -180,6 +180,19 @@ function pickATeammate(users: Array<User>, hasGoneMap: SyncedMap<boolean>) {
   return eligibleTeammates[randIdx];
 }
 
+function getFilteredUsers(users: Array<User>) {
+  var filteredList = [];
+  var filteredIds = new Set();
+  for (var i = 0; i < users.length; i++) {
+    var curr = users[i].id;
+    if (!filteredIds.has(curr)) {
+      filteredIds.add(curr);
+      filteredList.push(users[i]);
+    }
+  }
+  return filteredList;
+}
+
 function Widget() {
   const users = figma.activeUsers;
   //const users = TEST_ACTIVE_USERS;
@@ -269,7 +282,7 @@ function Widget() {
         )}
       </AutoLayout>
       <AutoLayout direction={"vertical"} spacing={20}>
-        {users.map((user, idx) => {
+        {getFilteredUsers(users).map((user, idx, users) => {
           if (idx % 3 != 0) {
             return null;
           }
