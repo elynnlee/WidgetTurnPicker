@@ -62,12 +62,12 @@ function Button({
 function TeammatePhotoBubble({
   figmaUser,
   isActive = false,
-  hasGone = false,
+  hasGone,
   onUserSelected = undefined,
 }: {
   figmaUser: User;
   isActive?: boolean;
-  hasGone?: boolean;
+  hasGone?: number;
   onUserSelected?: (user: User) => void;
 }) {
   const photoUrl = figmaUser.photoUrl;
@@ -83,7 +83,7 @@ function TeammatePhotoBubble({
       spacing={12}
       opacity={hasGone ? 0.5 : 1}
       onClick={
-        isActive || hasGone || !onUserSelected
+        isActive || hasGone > 0 || !onUserSelected
           ? undefined
           : () => {
               onUserSelected(figmaUser);
@@ -111,7 +111,7 @@ function TeammatePhotoBubble({
         width={textWidth}
         horizontalAlignText={"left"}
         fontSize={fontSize}
-        textDecoration={hasGone ? "strikethrough" : "none"}
+        textDecoration={hasGone > 0 ? "strikethrough" : "none"}
       >
         {isActive ? `${teammateName}, it's your turn!` : teammateName}
       </Text>
@@ -126,9 +126,9 @@ function TeammatePhotoBubbleRow({
   onUserSelected,
 }: {
   key?: any;
-  user1?: [User | undefined, boolean | undefined];
-  user2?: [User | undefined, boolean | undefined];
-  user3?: [User | undefined, boolean | undefined];
+  user1?: [User | undefined, number | undefined];
+  user2?: [User | undefined, number | undefined];
+  user3?: [User | undefined, number | undefined];
   onUserSelected: (user: User) => void;
 }) {
   return (
@@ -164,7 +164,7 @@ function TeammatePhotoBubbleRow({
   );
 }
 
-function pickATeammate(users: Array<User>, hasGoneMap: SyncedMap<boolean>) {
+function pickATeammate(users: Array<User>, hasGoneMap: SyncedMap<number>) {
   var eligibleTeammates = [];
 
   for (var i = 0; i < users.length; i++) {
@@ -197,7 +197,7 @@ function Widget() {
   const users = figma.activeUsers;
   //const users = TEST_ACTIVE_USERS;
   const [activeTeammate, setActive] = useSyncedState("activeTeammate", null);
-  const hasGoneMap = useSyncedMap<boolean>("hasGone");
+  const hasGoneMap = useSyncedMap<number>("hasGone");
   const [forceRerender, setForceRerender] = useSyncedState("forceRerender", 0);
   const everyoneHasGone = users.every((user) => hasGoneMap.get(user.id));
   usePropertyMenu(
@@ -212,6 +212,11 @@ function Widget() {
         propertyName: "refresh",
         itemType: "action",
       },
+      {
+        tooltip: "Undo",
+        propertyName: "undo",
+        itemType: "action",
+      },
     ],
     (e) => {
       if (e.propertyName === "reset") {
@@ -221,6 +226,24 @@ function Widget() {
       } else if (e.propertyName === "refresh") {
         // refresh
         setForceRerender(1);
+      } else if (e.propertyName === "undo") {
+        // undo
+        var mostRecent = hasGoneMap.keys()[hasGoneMap.keys().length - 1];
+        hasGoneMap.delete(mostRecent);
+
+        // setActive to last person, null if no more
+        if (hasGoneMap.keys().length == 0) {
+          setActive(null);
+        } else {
+          // get the id of the last active person
+          var newActive = hasGoneMap.keys()[hasGoneMap.keys().length - 1];
+
+          // find the teammate with that id
+          var teammate = users.find((i) => i.id === newActive);
+
+          // set that teammate as active
+          setActive(teammate);
+        }
       }
     }
   );
@@ -273,7 +296,7 @@ function Widget() {
             onClick={() => {
               var chosenTeammate = pickATeammate(users, hasGoneMap);
               // update map + say this person has gone
-              hasGoneMap.set(chosenTeammate.id, true);
+              hasGoneMap.set(chosenTeammate.id, hasGoneMap.keys().length + 1);
 
               // designate which one is active
               setActive(chosenTeammate);
@@ -286,19 +309,21 @@ function Widget() {
           if (idx % 3 != 0) {
             return null;
           }
-          var user1hasGone = users[idx] ? hasGoneMap.get(users[idx].id) : false;
+          var user1hasGone = users[idx]
+            ? hasGoneMap.get(users[idx].id)
+            : undefined;
           var user2hasGone = users[idx + 1]
             ? hasGoneMap.get(users[idx + 1].id)
-            : false;
+            : undefined;
           var user3hasGone = users[idx + 2]
             ? hasGoneMap.get(users[idx + 2].id)
-            : false;
+            : undefined;
 
           return (
             <TeammatePhotoBubbleRow
               key={idx}
               onUserSelected={(user) => {
-                hasGoneMap.set(user.id, true);
+                hasGoneMap.set(user.id, hasGoneMap.keys().length + 1);
                 setActive(user);
               }}
               user1={[users[idx], user1hasGone]}
