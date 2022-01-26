@@ -165,11 +165,11 @@ function TeammatePhotoBubbleRow({
   );
 }
 
-function pickATeammate(users: Array<User>, hasGoneMap: SyncedMap<number>) {
+function pickATeammate(users: Array<User>, userIdToGoneOrder: SyncedMap<number>) {
   var eligibleTeammates = [];
 
   for (var i = 0; i < users.length; i++) {
-    if (hasGoneMap.get(users[i].id)) {
+    if (userIdToGoneOrder.get(users[i].id)) {
       continue;
     } else {
       eligibleTeammates.push(users[i]);
@@ -195,12 +195,18 @@ function getFilteredUsers(users: Array<User>) {
 }
 
 function Widget() {
-  const [users, setUsers] = useSyncedState<ActiveUser[]>("users", []);
+  // List of active users
+  const [users, setUsers] = useSyncedState<User[]>("users", () => {
+    // uncomment for testing
+    // return TEST_ACTIVE_USERS;
 
-  //const users = TEST_ACTIVE_USERS;
-  const [activeTeammate, setActive] = useSyncedState("activeTeammate", null);
-  const hasGoneMap = useSyncedMap<number>("hasGone");
-  const everyoneHasGone = users.every((user) => hasGoneMap.get(user.id));
+    // TODO: initialize activeUsers here instead
+    return []
+  });
+
+  const [activeTeammate, setActive] = useSyncedState<User | null>("activeTeammate", null);
+  const userIdToGoneOrder = useSyncedMap<number>("hasGone");
+  const everyoneHasGone = users.every((user) => userIdToGoneOrder.get(user.id));
 
   const updateUsers = () => {
     // I'm sorting by sessionId to keep the list relatively stable
@@ -210,6 +216,23 @@ function Widget() {
 
     setUsers(currentUsers);
   };
+
+  const resetHasGone = () => {
+    userIdToGoneOrder.keys().forEach((k) => userIdToGoneOrder.delete(k));
+  }
+
+  const resetAll = () => {
+    resetHasGone()
+    setActive(null)
+  }
+
+  const userGoesNext = (user: User) => {
+    // update map + say this person has gone
+    userIdToGoneOrder.set(user.id, userIdToGoneOrder.size + 1);
+
+    // designate which one is active
+    setActive(user)
+  }
 
   usePropertyMenu(
     [
@@ -223,37 +246,37 @@ function Widget() {
         propertyName: "refresh",
         itemType: "action",
       },
-      {
+      userIdToGoneOrder.size !== 0 && {
         tooltip: "Undo",
         propertyName: "undo",
         itemType: "action",
       },
-    ],
+    ].filter(Boolean) as WidgetPropertyMenuItem[],
     (e) => {
       if (e.propertyName === "reset") {
         // reset
-        hasGoneMap.keys().forEach((k) => hasGoneMap.delete(k));
-        setActive(null);
+        resetAll()
+        updateUsers();
       } else if (e.propertyName === "refresh") {
         // refresh
         updateUsers();
       } else if (e.propertyName === "undo") {
         // undo
-        var mostRecent = hasGoneMap.keys()[hasGoneMap.keys().length - 1];
-        hasGoneMap.delete(mostRecent);
+        if (userIdToGoneOrder.size !== 0) {
+          const sortedEntriesByGoneOrder = userIdToGoneOrder.entries()
+          sortedEntriesByGoneOrder.sort((a, b) => {
+            return b[1] - a[1]
+          })
 
-        // setActive to last person, null if no more
-        if (hasGoneMap.keys().length == 0) {
-          setActive(null);
+          // Find the most recent user and previous user
+          const mostRecentUserId = sortedEntriesByGoneOrder[0][0]
+          const nextUserId = sortedEntriesByGoneOrder[1]?.[0] ?? null
+          const nextUser = nextUserId ? users.find(user => user.id === nextUserId) : null
+
+          userIdToGoneOrder.delete(mostRecentUserId);
+          setActive(nextUser || null)
         } else {
-          // get the id of the last active person
-          var newActive = hasGoneMap.keys()[hasGoneMap.keys().length - 1];
-
-          // find the teammate with that id
-          var teammate = users.find((i) => i.id === newActive);
-
-          // set that teammate as active
-          setActive(teammate);
+          resetAll()
         }
       }
     }
@@ -303,20 +326,14 @@ function Widget() {
           <Button
             text={"Start over"}
             onClick={() => {
-              hasGoneMap.keys().forEach((k) => hasGoneMap.delete(k));
-              setActive(null);
+              resetAll()
             }}
           />
         ) : (
           <Button
             text={"Next (random)"}
             onClick={() => {
-              var chosenTeammate = pickATeammate(users, hasGoneMap);
-              // update map + say this person has gone
-              hasGoneMap.set(chosenTeammate.id, hasGoneMap.keys().length + 1);
-
-              // designate which one is active
-              setActive(chosenTeammate);
+              userGoesNext(pickATeammate(users, userIdToGoneOrder))
             }}
           />
         )}
@@ -327,21 +344,20 @@ function Widget() {
             return null;
           }
           var user1hasGone = users[idx]
-            ? hasGoneMap.get(users[idx].id)
+            ? userIdToGoneOrder.get(users[idx].id)
             : undefined;
           var user2hasGone = users[idx + 1]
-            ? hasGoneMap.get(users[idx + 1].id)
+            ? userIdToGoneOrder.get(users[idx + 1].id)
             : undefined;
           var user3hasGone = users[idx + 2]
-            ? hasGoneMap.get(users[idx + 2].id)
+            ? userIdToGoneOrder.get(users[idx + 2].id)
             : undefined;
 
           return (
             <TeammatePhotoBubbleRow
               key={idx}
               onUserSelected={(user) => {
-                hasGoneMap.set(user.id, hasGoneMap.keys().length + 1);
-                setActive(user);
+                userGoesNext(user)
               }}
               user1={[users[idx], user1hasGone]}
               user2={[users[idx + 1], user2hasGone]}
