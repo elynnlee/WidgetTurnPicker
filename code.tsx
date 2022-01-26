@@ -9,6 +9,7 @@ const {
   Text,
   Frame,
   Image,
+  useEffect,
 } = widget;
 
 const TEST_ACTIVE_USERS = [
@@ -194,12 +195,22 @@ function getFilteredUsers(users: Array<User>) {
 }
 
 function Widget() {
-  const users = figma.activeUsers;
+  const [users, setUsers] = useSyncedState<ActiveUser[]>("users", []);
+
   //const users = TEST_ACTIVE_USERS;
   const [activeTeammate, setActive] = useSyncedState("activeTeammate", null);
   const hasGoneMap = useSyncedMap<number>("hasGone");
-  const [forceRerender, setForceRerender] = useSyncedState("forceRerender", 0);
   const everyoneHasGone = users.every((user) => hasGoneMap.get(user.id));
+
+  const updateUsers = () => {
+    // I'm sorting by sessionId to keep the list relatively stable
+    const currentUsers = figma.activeUsers.sort(
+      (a, b) => a.sessionId - b.sessionId
+    );
+
+    setUsers(currentUsers);
+  };
+
   usePropertyMenu(
     [
       {
@@ -225,7 +236,7 @@ function Widget() {
         setActive(null);
       } else if (e.propertyName === "refresh") {
         // refresh
-        setForceRerender(1);
+        updateUsers();
       } else if (e.propertyName === "undo") {
         // undo
         var mostRecent = hasGoneMap.keys()[hasGoneMap.keys().length - 1];
@@ -247,6 +258,12 @@ function Widget() {
       }
     }
   );
+
+  useEffect(() => {
+    if (users.length === 0) {
+      updateUsers();
+    }
+  });
 
   return (
     <AutoLayout
