@@ -246,12 +246,12 @@ function Widget() {
         propertyName: "refresh",
         itemType: "action",
       },
-      {
+      userIdToGoneOrder.size !== 0 && {
         tooltip: "Undo",
         propertyName: "undo",
         itemType: "action",
       },
-    ],
+    ].filter(Boolean) as WidgetPropertyMenuItem[],
     (e) => {
       if (e.propertyName === "reset") {
         // reset
@@ -262,19 +262,22 @@ function Widget() {
         updateUsers();
       } else if (e.propertyName === "undo") {
         // undo
+        if (userIdToGoneOrder.size !== 0) {
+          const sortedEntriesByGoneOrder = userIdToGoneOrder.entries()
+          sortedEntriesByGoneOrder.sort((a, b) => {
+            return b[1] - a[1]
+          })
 
-        const sortedEntriesByGoneOrder = userIdToGoneOrder.entries()
-        sortedEntriesByGoneOrder.sort((a, b) => {
-          return b[1] - a[1]
-        })
+          // Find the most recent user and previous user
+          const mostRecentUserId = sortedEntriesByGoneOrder[0][0]
+          const nextUserId = sortedEntriesByGoneOrder[1]?.[0] ?? null
+          const nextUser = nextUserId ? users.find(user => user.id === nextUserId) : null
 
-        // Find the most recent user and previous user
-        const mostRecentUserId = sortedEntriesByGoneOrder[0][0]
-        const nextUserId = sortedEntriesByGoneOrder[1]?.[0] ?? null
-        const nextUser = nextUserId ? users.find(user => user.id === nextUserId) : null
-
-        userIdToGoneOrder.delete(mostRecentUserId);
-        setActive(nextUser || null)
+          userIdToGoneOrder.delete(mostRecentUserId);
+          setActive(nextUser || null)
+        } else {
+          resetAll()
+        }
       }
     }
   );
