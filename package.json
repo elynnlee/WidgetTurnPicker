@@ -11,7 +11,7 @@
   "license": "",
   "devDependencies": {
     "@figma/plugin-typings": "*",
-    "@figma/widget-typings": "*",
+    "@figma/widget-typings": "^1.0.3",
     "prettier": "^2.4.1",
     "typescript": "*"
   }
