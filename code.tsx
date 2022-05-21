@@ -165,7 +165,10 @@ function TeammatePhotoBubbleRow({
   );
 }
 
-function pickATeammate(users: Array<User>, userIdToGoneOrder: SyncedMap<number>) {
+function pickATeammate(
+  users: Array<User>,
+  userIdToGoneOrder: SyncedMap<number>
+) {
   var eligibleTeammates = [];
 
   for (var i = 0; i < users.length; i++) {
@@ -201,10 +204,13 @@ function Widget() {
     // return TEST_ACTIVE_USERS;
 
     // TODO: initialize activeUsers here instead
-    return []
+    return [];
   });
 
-  const [activeTeammate, setActive] = useSyncedState<User | null>("activeTeammate", null);
+  const [activeTeammate, setActive] = useSyncedState<User | null>(
+    "activeTeammate",
+    null
+  );
   const userIdToGoneOrder = useSyncedMap<number>("hasGone");
   const everyoneHasGone = users.every((user) => userIdToGoneOrder.get(user.id));
 
@@ -219,20 +225,20 @@ function Widget() {
 
   const resetHasGone = () => {
     userIdToGoneOrder.keys().forEach((k) => userIdToGoneOrder.delete(k));
-  }
+  };
 
   const resetAll = () => {
-    resetHasGone()
-    setActive(null)
-  }
+    resetHasGone();
+    setActive(null);
+  };
 
   const userGoesNext = (user: User) => {
     // update map + say this person has gone
     userIdToGoneOrder.set(user.id, userIdToGoneOrder.size + 1);
 
     // designate which one is active
-    setActive(user)
-  }
+    setActive(user);
+  };
 
   usePropertyMenu(
     [
@@ -255,7 +261,7 @@ function Widget() {
     (e) => {
       if (e.propertyName === "reset") {
         // reset
-        resetAll()
+        resetAll();
         updateUsers();
       } else if (e.propertyName === "refresh") {
         // refresh
@@ -263,20 +269,22 @@ function Widget() {
       } else if (e.propertyName === "undo") {
         // undo
         if (userIdToGoneOrder.size !== 0) {
-          const sortedEntriesByGoneOrder = userIdToGoneOrder.entries()
+          const sortedEntriesByGoneOrder = userIdToGoneOrder.entries();
           sortedEntriesByGoneOrder.sort((a, b) => {
-            return b[1] - a[1]
-          })
+            return b[1] - a[1];
+          });
 
           // Find the most recent user and previous user
-          const mostRecentUserId = sortedEntriesByGoneOrder[0][0]
-          const nextUserId = sortedEntriesByGoneOrder[1]?.[0] ?? null
-          const nextUser = nextUserId ? users.find(user => user.id === nextUserId) : null
+          const mostRecentUserId = sortedEntriesByGoneOrder[0][0];
+          const nextUserId = sortedEntriesByGoneOrder[1]?.[0] ?? null;
+          const nextUser = nextUserId
+            ? users.find((user) => user.id === nextUserId)
+            : null;
 
           userIdToGoneOrder.delete(mostRecentUserId);
-          setActive(nextUser || null)
+          setActive(nextUser || null);
         } else {
-          resetAll()
+          resetAll();
         }
       }
     }
@@ -326,14 +334,14 @@ function Widget() {
           <Button
             text={"Start over"}
             onClick={() => {
-              resetAll()
+              resetAll();
             }}
           />
         ) : (
           <Button
             text={"Next (random)"}
             onClick={() => {
-              userGoesNext(pickATeammate(users, userIdToGoneOrder))
+              userGoesNext(pickATeammate(users, userIdToGoneOrder));
             }}
           />
         )}
@@ -357,7 +365,7 @@ function Widget() {
             <TeammatePhotoBubbleRow
               key={idx}
               onUserSelected={(user) => {
-                userGoesNext(user)
+                userGoesNext(user);
               }}
               user1={[users[idx], user1hasGone]}
               user2={[users[idx + 1], user2hasGone]}
