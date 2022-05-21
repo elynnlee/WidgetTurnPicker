@@ -197,6 +197,25 @@ function getFilteredUsers(users: Array<User>) {
   return filteredList;
 }
 
+// get sorted list of users by whether they've gone
+function getSortedByHasGone(
+  users: Array<User>,
+  userIdToGoneOrder: SyncedMap<number>
+) {
+  const usersWhoHaveGone = [];
+  const usersWhoHaveNotGone = [];
+  for (var i = 0; i < users.length; i++) {
+    if (userIdToGoneOrder.get(users[i].id)) {
+      usersWhoHaveGone.push(users[i]);
+    } else {
+      usersWhoHaveNotGone.push(users[i]);
+    }
+  }
+
+  // combine the lists
+  return [...usersWhoHaveNotGone, ...usersWhoHaveGone];
+}
+
 function Widget() {
   // List of active users
   const [users, setUsers] = useSyncedState<User[]>("users", () => {
@@ -219,6 +238,9 @@ function Widget() {
     const currentUsers = figma.activeUsers.sort(
       (a, b) => a.sessionId - b.sessionId
     );
+
+    // uncomment if testing
+    // var currentUsers = users;
 
     setUsers(currentUsers);
   };
@@ -347,32 +369,34 @@ function Widget() {
         )}
       </AutoLayout>
       <AutoLayout direction={"vertical"} spacing={20}>
-        {getFilteredUsers(users).map((user, idx, users) => {
-          if (idx % 3 != 0) {
-            return null;
-          }
-          var user1hasGone = users[idx]
-            ? userIdToGoneOrder.get(users[idx].id)
-            : undefined;
-          var user2hasGone = users[idx + 1]
-            ? userIdToGoneOrder.get(users[idx + 1].id)
-            : undefined;
-          var user3hasGone = users[idx + 2]
-            ? userIdToGoneOrder.get(users[idx + 2].id)
-            : undefined;
+        {getSortedByHasGone(getFilteredUsers(users), userIdToGoneOrder).map(
+          (user, idx, users) => {
+            if (idx % 3 != 0) {
+              return null;
+            }
+            var user1hasGone = users[idx]
+              ? userIdToGoneOrder.get(users[idx].id)
+              : undefined;
+            var user2hasGone = users[idx + 1]
+              ? userIdToGoneOrder.get(users[idx + 1].id)
+              : undefined;
+            var user3hasGone = users[idx + 2]
+              ? userIdToGoneOrder.get(users[idx + 2].id)
+              : undefined;
 
-          return (
-            <TeammatePhotoBubbleRow
-              key={idx}
-              onUserSelected={(user) => {
-                userGoesNext(user);
-              }}
-              user1={[users[idx], user1hasGone]}
-              user2={[users[idx + 1], user2hasGone]}
-              user3={[users[idx + 2], user3hasGone]}
-            />
-          );
-        })}
+            return (
+              <TeammatePhotoBubbleRow
+                key={idx}
+                onUserSelected={(user) => {
+                  userGoesNext(user);
+                }}
+                user1={[users[idx], user1hasGone]}
+                user2={[users[idx + 1], user2hasGone]}
+                user3={[users[idx + 2], user3hasGone]}
+              />
+            );
+          }
+        )}
       </AutoLayout>
     </AutoLayout>
   );
